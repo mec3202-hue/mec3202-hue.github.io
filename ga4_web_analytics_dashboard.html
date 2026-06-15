@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GA4 Web Analytics — B2B Marketing Site Performance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #F4F6F8;
+  --panel:    #FFFFFF;
+  --border:   #E2E6EB;
+  --ink:      #14181F;
+  --ink2:     #4A5260;
+  --muted:    #8B94A3;
+  --blue:     #2C5EE8;
+  --blue-lt:  #E8EEFC;
+  --amber:    #E89A2C;
+  --amber-lt: #FCF1E0;
+  --green:    #1E9E6B;
+  --green-lt: #E1F5ED;
+  --coral:    #E8552C;
+  --coral-lt: #FCE6DE;
+  --navy:     #0E1A33;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ── Top bar ── */
+.topbar {
+  background: var(--navy);
+  color: #fff;
+  padding: 0 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  height: 76px;
+  border-bottom: 3px solid var(--blue);
+}
+.topbar-left { display:flex; align-items:center; gap:14px; }
+.ga-mark {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--blue), #5C8BFF);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:15px; color:#fff;
+}
+.topbar h1 {
+  font-family:'Space Grotesk',sans-serif; font-size:17px; font-weight:600;
+}
+.topbar-sub {
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+  color:rgba(255,255,255,0.45); margin-top:2px; letter-spacing:0.3px;
+}
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.range-pill {
+  font-family:'IBM Plex Mono',monospace; font-size:11px;
+  padding:7px 14px; border-radius:6px;
+  background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.7);
+  border:1px solid rgba(255,255,255,0.1);
+}
+.live-pill {
+  display:flex; align-items:center; gap:7px;
+  font-family:'IBM Plex Mono',monospace; font-size:10.5px;
+  letter-spacing:1px; padding:7px 14px; border-radius:6px;
+  background:rgba(30,158,107,0.15); color:#5CD9A8;
+  border:1px solid rgba(30,158,107,0.3);
+}
+.live-dot { width:6px; height:6px; border-radius:50%; background:#5CD9A8; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Tabs ── */
+.tabbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex; gap: 4px;
+}
+.tab {
+  padding: 16px 18px;
+  font-family:'Space Grotesk',sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--muted); background:none; border:none; cursor:pointer;
+  border-bottom: 2px solid transparent;
+  transition: all .15s;
+}
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+/* ── Page ── */
+.page { display:none; padding: 28px 32px 56px; max-width:1400px; margin:0 auto; }
+.page.active { display:block; }
+
+.page-head { margin-bottom: 22px; }
+.page-title { font-family:'Space Grotesk',sans-serif; font-size: 22px; font-weight: 600; }
+.page-sub { font-family:'IBM Plex Mono',monospace; font-size: 11.5px; color: var(--muted); margin-top:4px; }
+
+/* ── KPI grid ── */
+.kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:22px; }
+.kpi-card {
+  background: var(--panel); border:1px solid var(--border); border-radius:10px;
+  padding: 18px 18px 16px; position:relative; overflow:hidden;
+}
+.kpi-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--kc,var(--blue));
+}
+.kpi-label { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1px; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.kpi-val { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; line-height:1; margin-bottom:6px; }
+.kpi-delta { font-family:'IBM Plex Mono',monospace; font-size:11px; }
+.delta-up { color: var(--green); }
+.delta-down { color: var(--coral); }
+
+/* ── grids ── */
+.grid-2 { display:grid; grid-template-columns:1.4fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+.grid-half { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+
+.card {
+  background: var(--panel); border:1px solid var(--border); border-radius:10px; padding:20px;
+}
+.card-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+.card-title { font-family:'Space Grotesk',sans-serif; font-size:14px; font-weight:600; }
+.card-sub { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); margin-top:3px; }
+.card-tag {
+  font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.5px;
+  padding:3px 9px; border-radius:5px; text-transform:uppercase;
+}
+
+/* ── table ── */
+table { width:100%; border-collapse:collapse; }
+thead th {
+  text-align:left; font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1px;
+  text-transform:uppercase; color:var(--muted); padding:8px 10px; border-bottom:1px solid var(--border);
+}
+tbody td { padding:10px 10px; font-size:12.5px; border-bottom:1px solid #F0F2F5; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:#FAFBFC; }
+.bar-wrap { display:flex; align-items:center; gap:8px; }
+.bar-bg { flex:1; height:5px; background:#EEF1F5; border-radius:3px; overflow:hidden; }
+.bar-fill { height:100%; border-radius:3px; }
+.chan-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:8px; }
+
+/* ── insight strip ── */
+.insight-strip {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:14px;
+}
+.insight-card {
+  background: var(--panel); border:1px solid var(--border); border-left:4px solid var(--ic,var(--blue));
+  border-radius:0 10px 10px 0; padding:16px 18px;
+}
+.insight-label { font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+.insight-title { font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; margin-bottom:6px; }
+.insight-text { font-size:12px; color:var(--ink2); line-height:1.6; }
+
+footer {
+  background: var(--navy); color: rgba(255,255,255,0.4);
+  text-align:center; padding:22px 32px;
+  font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1.8;
+}
+footer a { color:#5C8BFF; text-decoration:none; }
+footer strong { color: rgba(255,255,255,0.7); }
+
+canvas { display:block; }
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="ga-mark">GA4</div>
+    <div>
+      <h1>Web Analytics — B2B Marketing Site</h1>
+      <div class="topbar-sub">buildingsolutions-sim.com · Portfolio Project · Simulated GA4 data</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="range-pill">Jan 1 – Dec 31, 2024</span>
+    <span class="live-pill"><span class="live-dot"></span>SIMULATED</span>
+  </div>
+</div>
+
+<!-- ── Tabs ── -->
+<div class="tabbar">
+  <button class="tab active" onclick="showTab('overview')">Overview</button>
+  <button class="tab" onclick="showTab('acquisition')">Acquisition</button>
+  <button class="tab" onclick="showTab('engagement')">Engagement</button>
+  <button class="tab" onclick="showTab('conversions')">Conversions</button>
+  <button class="tab" onclick="showTab('audience')">Audience</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: OVERVIEW
+══════════════════════════════════════════════════════ -->
+<div class="page active" id="tab-overview">
+  <div class="page-head">
+    <div class="page-title">Reports Snapshot</div>
+    <div class="page-sub">Industrial building-materials marketing site · FY 2024 · all channels</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Sessions</div>
+      <div class="kpi-val">284,610</div>
+      <div class="kpi-delta delta-up">↑ 22.4% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--green)">
+      <div class="kpi-label">Engaged Sessions</div>
+      <div class="kpi-val">171,800</div>
+      <div class="kpi-delta delta-up">↑ 18.1% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--amber)">
+      <div class="kpi-label">Avg Engagement Time</div>
+      <div class="kpi-val">2m 14s</div>
+      <div class="kpi-delta delta-up">↑ 9s vs 2023</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--coral)">
+      <div class="kpi-label">Key Events</div>
+      <div class="kpi-val">9,842</div>
+      <div class="kpi-delta delta-up">↑ 31.6% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Conversion Rate</div>
+      <div class="kpi-val">3.46%</div>
+      <div class="kpi-delta delta-up">↑ 0.5pp YoY</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Sessions Over Time</div>
+          <div class="card-sub">Monthly sessions vs engaged sessions</div>
+        </div>
+        <span class="card-tag" style="background:var(--blue-lt);color:var(--blue)">LINE</span>
+      </div>
+      <canvas id="sessionsChart" height="190"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Sessions by Channel</div>
+          <div class="card-sub">% of total sessions</div>
+        </div>
+        <span class="card-tag" style="background:var(--green-lt);color:var(--green)">DONUT</span>
+      </div>
+      <canvas id="channelDonut" height="190"></canvas>
+    </div>
+  </div>
+
+  <div class="insight-strip">
+    <div class="insight-card" style="--ic:var(--blue)">
+      <div class="insight-label">Top Channel</div>
+      <div class="insight-title">Organic Search · 38%</div>
+      <div class="insight-text">Technical spec content and product pages continue to drive the majority of inbound traffic — SEO investment is compounding.</div>
+    </div>
+    <div class="insight-card" style="--ic:var(--green)">
+      <div class="insight-label">Fastest Growing</div>
+      <div class="insight-title">LinkedIn · +64% YoY</div>
+      <div class="insight-text">Paid and organic LinkedIn traffic grew the fastest of any channel, reflecting increased B2B social investment.</div>
+    </div>
+    <div class="insight-card" style="--ic:var(--amber)">
+      <div class="insight-label">Watch Closely</div>
+      <div class="insight-title">Direct Traffic Flat</div>
+      <div class="insight-text">Direct sessions were flat YoY — a signal that brand-search and bookmark-driven return visits aren't growing with the rest of the funnel.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: ACQUISITION
+══════════════════════════════════════════════════════ -->
+<div class="page" id="tab-acquisition">
+  <div class="page-head">
+    <div class="page-title">Acquisition</div>
+    <div class="page-sub">Where traffic comes from · session quality by channel</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">New Users</div>
+      <div class="kpi-val">198,420</div>
+      <div class="kpi-delta delta-up">↑ 19.8% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--green)">
+      <div class="kpi-label">Organic Search Sessions</div>
+      <div class="kpi-val">108,150</div>
+      <div class="kpi-delta delta-up">↑ 14.2% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--amber)">
+      <div class="kpi-label">Paid Search Sessions</div>
+      <div class="kpi-val">62,610</div>
+      <div class="kpi-delta delta-up">↑ 8.6% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--coral)">
+      <div class="kpi-label">LinkedIn Sessions</div>
+      <div class="kpi-val">37,800</div>
+      <div class="kpi-delta delta-up">↑ 64.0% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Avg CPC (Paid)</div>
+      <div class="kpi-val">$3.18</div>
+      <div class="kpi-delta delta-down">↑ $0.22 YoY</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px;">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Channel Performance</div>
+        <div class="card-sub">Sessions, engagement rate, and key event conversion rate by channel</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Channel</th><th>Sessions</th><th>New Users</th><th>Engagement Rate</th><th>Key Event Rate</th><th>Session Share</th></tr></thead>
+      <tbody id="channelTableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Sessions by Channel — Monthly Trend</div>
+          <div class="card-sub">Stacked monthly sessions across top channels</div>
+        </div>
+        <span class="card-tag" style="background:var(--blue-lt);color:var(--blue)">STACKED BAR</span>
+      </div>
+      <canvas id="channelTrend" height="200"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Top Landing Pages</div>
+          <div class="card-sub">By sessions — entry point to the site</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Landing Page</th><th>Sessions</th><th>Eng. Rate</th></tr></thead>
+        <tbody id="landingTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: ENGAGEMENT
+══════════════════════════════════════════════════════ -->
+<div class="page" id="tab-engagement">
+  <div class="page-head">
+    <div class="page-title">Engagement</div>
+    <div class="page-sub">How visitors interact with the site once they arrive</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Engagement Rate</div>
+      <div class="kpi-val">60.4%</div>
+      <div class="kpi-delta delta-up">↑ 2.8pp YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--green)">
+      <div class="kpi-label">Avg Session Duration</div>
+      <div class="kpi-val">3m 02s</div>
+      <div class="kpi-delta delta-up">↑ 14s YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--amber)">
+      <div class="kpi-label">Pages / Session</div>
+      <div class="kpi-val">3.8</div>
+      <div class="kpi-delta delta-up">↑ 0.3 YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--coral)">
+      <div class="kpi-label">Bounce Rate</div>
+      <div class="kpi-val">39.6%</div>
+      <div class="kpi-delta delta-up">↓ 2.8pp YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Returning Users</div>
+      <div class="kpi-val">28.1%</div>
+      <div class="kpi-delta delta-down">↓ 1.1pp YoY</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Top Pages by Views</div>
+          <div class="card-sub">Page path · views · avg engagement time</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Page Path</th><th>Views</th><th>Avg. Time</th><th></th></tr></thead>
+        <tbody id="topPagesBody"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Engagement Rate by Device</div>
+          <div class="card-sub">Engaged sessions vs total sessions</div>
+        </div>
+        <span class="card-tag" style="background:var(--amber-lt);color:var(--amber)">BAR</span>
+      </div>
+      <canvas id="deviceEngagement" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Marketing Asset Engagement</div>
+        <div class="card-sub">Downloads &amp; views of gated marketing collateral — spec sheets, case studies, and brochures</div>
+      </div>
+      <span class="card-tag" style="background:var(--green-lt);color:var(--green)">ASSET PERFORMANCE</span>
+    </div>
+    <table>
+      <thead><tr><th>Asset</th><th>Type</th><th>Views / Downloads</th><th>Avg. Time on Page</th><th>Leads Generated</th></tr></thead>
+      <tbody id="assetTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: CONVERSIONS
+══════════════════════════════════════════════════════ -->
+<div class="page" id="tab-conversions">
+  <div class="page-head">
+    <div class="page-title">Conversions</div>
+    <div class="page-sub">Key events tracked as marketing &amp; sales conversions</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Spec Sheet Downloads</div>
+      <div class="kpi-val">4,180</div>
+      <div class="kpi-delta delta-up">↑ 26.4% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--green)">
+      <div class="kpi-label">Quote Requests</div>
+      <div class="kpi-val">1,962</div>
+      <div class="kpi-delta delta-up">↑ 41.2% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--amber)">
+      <div class="kpi-label">Contact Form Submits</div>
+      <div class="kpi-val">2,210</div>
+      <div class="kpi-delta delta-up">↑ 18.9% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--coral)">
+      <div class="kpi-label">Webinar Signups</div>
+      <div class="kpi-val">1,490</div>
+      <div class="kpi-delta delta-up">↑ 52.7% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Cost / Conversion (Paid)</div>
+      <div class="kpi-val">$48.60</div>
+      <div class="kpi-delta delta-up">↓ $6.40 YoY</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Conversions by Channel</div>
+          <div class="card-sub">Which channels drive key events, not just traffic</div>
+        </div>
+        <span class="card-tag" style="background:var(--blue-lt);color:var(--blue)">BAR</span>
+      </div>
+      <canvas id="conversionsByChannel" height="200"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Conversion Funnel</div>
+          <div class="card-sub">Session → Engaged → Asset View → Lead Submitted</div>
+        </div>
+        <span class="card-tag" style="background:var(--coral-lt);color:var(--coral)">FUNNEL</span>
+      </div>
+      <div id="funnelChart" style="padding:8px 0 0;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Monthly Key Events Trend</div>
+        <div class="card-sub">All four conversion event types, Jan–Dec 2024</div>
+      </div>
+      <span class="card-tag" style="background:var(--green-lt);color:var(--green)">LINE</span>
+    </div>
+    <canvas id="conversionsTrend" height="120"></canvas>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     TAB: AUDIENCE
+══════════════════════════════════════════════════════ -->
+<div class="page" id="tab-audience">
+  <div class="page-head">
+    <div class="page-title">Audience</div>
+    <div class="page-sub">Who is visiting — geography, device, and company size signals</div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Total Users</div>
+      <div class="kpi-val">204,330</div>
+      <div class="kpi-delta delta-up">↑ 20.1% YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--green)">
+      <div class="kpi-label">Desktop Share</div>
+      <div class="kpi-val">68%</div>
+      <div class="kpi-delta delta-up">↑ 3pp YoY</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--amber)">
+      <div class="kpi-label">Top Region</div>
+      <div class="kpi-val">Midwest US</div>
+      <div class="kpi-delta">31% of sessions</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--coral)">
+      <div class="kpi-label">Top Industry (LinkedIn)</div>
+      <div class="kpi-val">Construction</div>
+      <div class="kpi-delta">44% of LI visitors</div>
+    </div>
+    <div class="kpi-card" style="--kc:var(--blue)">
+      <div class="kpi-label">Intl. Sessions</div>
+      <div class="kpi-val">12.4%</div>
+      <div class="kpi-delta delta-up">↑ 2.1pp YoY</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Sessions by Region (US)</div>
+          <div class="card-sub">Distribution across major U.S. regions</div>
+        </div>
+        <span class="card-tag" style="background:var(--blue-lt);color:var(--blue)">BAR</span>
+      </div>
+      <canvas id="regionChart" height="200"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">Device Category</div>
+          <div class="card-sub">% of sessions by device type</div>
+        </div>
+        <span class="card-tag" style="background:var(--green-lt);color:var(--green)">DONUT</span>
+      </div>
+      <canvas id="deviceDonut" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">LinkedIn Visitor Industry Breakdown</div>
+        <div class="card-sub">Job-function and industry data available via LinkedIn Campaign Manager integration</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Industry</th><th>Share of LinkedIn Sessions</th><th></th></tr></thead>
+      <tbody id="industryTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <div><strong>GA4 Web Analytics — B2B Marketing Site Performance</strong> · Portfolio Project · Mason Cunningham · April 2026</div>
+  <div>Built with HTML · CSS · JavaScript · Chart.js</div>
+  <div style="margin-top:8px;max-width:680px;margin-left:auto;margin-right:auto;">
+    ⚠️ <strong>Data Disclosure:</strong> All data is simulated for portfolio demonstration purposes, modeled
+    after typical B2B industrial / building-materials marketing site benchmarks. No real Saint-Gobain
+    data, accounts, or GA4 properties were accessed. Layout and metric definitions follow
+    <a href="https://support.google.com/analytics/answer/9212670" target="_blank">Google Analytics 4 standard reporting</a>.
+  </div>
+  <div style="margin-top:6px;"><a href="github.com/mec3202-hue" target="_blank">github.com/mec3202-hue</a></div>
+</footer>
+
+<script>
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const C = { blue:'#2C5EE8', green:'#1E9E6B', amber:'#E89A2C', coral:'#E8552C', navy:'#0E1A33', muted:'#8B94A3' };
+const FONT = { family:"'IBM Plex Mono', monospace", size:10 };
+const GRID = { color:'rgba(20,24,31,0.05)' };
+
+function baseOpts(extra={}) {
+  return {
+    responsive:true, maintainAspectRatio:true,
+    plugins:{ legend:{ labels:{ color:C.muted, font:FONT, boxWidth:10, padding:12 } } },
+    scales:{
+      x:{ grid:{display:false}, ticks:{ color:C.muted, font:FONT } },
+      y:{ grid:GRID, ticks:{ color:C.muted, font:FONT } }
+    },
+    animation:{ duration:650, easing:'easeOutQuart' },
+    ...extra
+  };
+}
+
+/* ───────── TAB SWITCH ───────── */
+function showTab(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ───────── OVERVIEW ───────── */
+const sessionsData   = [18200,19400,20800,22600,24100,25800,27200,26100,28400,29800,30200,32000];
+const engagedData    = sessionsData.map(v=>Math.round(v*(0.56+Math.random()*0.08)));
+
+new Chart(document.getElementById('sessionsChart'), {
+  type:'line',
+  data:{ labels:MONTHS, datasets:[
+    { label:'Sessions', data:sessionsData, borderColor:C.blue, backgroundColor:C.blue+'18', fill:true, tension:.35, pointRadius:2 },
+    { label:'Engaged Sessions', data:engagedData, borderColor:C.green, backgroundColor:'transparent', borderDash:[4,3], tension:.35, pointRadius:2 },
+  ]},
+  options: baseOpts()
+});
+
+const channelShares = { 'Organic Search':38, 'Paid Search':22, 'LinkedIn':13, 'Direct':14, 'Referral':8, 'Email':5 };
+const channelColors  = [C.blue, C.amber, '#0A66C2', C.green, C.coral, '#9B6BD9'];
+new Chart(document.getElementById('channelDonut'), {
+  type:'doughnut',
+  data:{ labels:Object.keys(channelShares), datasets:[{ data:Object.values(channelShares), backgroundColor:channelColors, borderColor:'#fff', borderWidth:3, hoverOffset:6 }] },
+  options:{ cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ color:C.muted, font:FONT, boxWidth:10, padding:10 } }, tooltip:{ callbacks:{ label:c=>` ${c.label}: ${c.raw}%` } } }, animation:{duration:650}, responsive:true, maintainAspectRatio:true }
+});
+
+/* ───────── ACQUISITION ───────── */
+const channelData = [
+  { name:'Organic Search', color:C.blue,    sessions:108150, newUsers:84200, engRate:0.642, eventRate:0.038, share:38 },
+  { name:'Paid Search',     color:C.amber,   sessions:62610,  newUsers:51900, engRate:0.578, eventRate:0.041, share:22 },
+  { name:'LinkedIn',        color:'#0A66C2', sessions:37000,  newUsers:31200, engRate:0.611, eventRate:0.052, share:13 },
+  { name:'Direct',          color:C.green,   sessions:39850,  newUsers:18400, engRate:0.594, eventRate:0.029, share:14 },
+  { name:'Referral',        color:C.coral,   sessions:22770,  newUsers:9800,  engRate:0.583, eventRate:0.033, share:8  },
+  { name:'Email',           color:'#9B6BD9', sessions:14230,  newUsers:2920,  engRate:0.701, eventRate:0.061, share:5  },
+];
+document.getElementById('channelTableBody').innerHTML = channelData.map(c=>`
+  <tr>
+    <td><span class="chan-dot" style="background:${c.color}"></span>${c.name}</td>
+    <td>${c.sessions.toLocaleString()}</td>
+    <td>${c.newUsers.toLocaleString()}</td>
+    <td>${(c.engRate*100).toFixed(1)}%</td>
+    <td>${(c.eventRate*100).toFixed(1)}%</td>
+    <td>
+      <div class="bar-wrap">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;width:30px">${c.share}%</span>
+        <div class="bar-bg"><div class="bar-fill" style="width:${c.share*2.4}%;background:${c.color}"></div></div>
+      </div>
+    </td>
+  </tr>`).join('');
+
+// Channel trend (stacked)
+const channelMonthly = {
+  'Organic Search': [7800,8100,8400,8900,9200,9500,9800,9300,9900,10300,10500,10900],
+  'Paid Search':    [4200,4500,4700,5100,5400,5700,5900,5600,6000,6300,6400,6700],
+  'LinkedIn':       [1800,2000,2300,2600,2900,3200,3500,3300,3800,4100,4300,4700],
+  'Direct':         [3200,3300,3400,3500,3600,3700,3700,3600,3800,3900,3900,4000],
+  'Referral':       [1100,1200,1300,1450,1600,1700,1800,1700,1900,2000,2050,2200],
+};
+new Chart(document.getElementById('channelTrend'), {
+  type:'bar',
+  data:{ labels:MONTHS, datasets:Object.entries(channelMonthly).map(([name,data],i)=>({
+    label:name, data, backgroundColor:channelColors[i]+'CC', borderRadius:2
+  })) },
+  options:{ ...baseOpts(), plugins:{ legend:{ position:'bottom', labels:{ color:C.muted, font:FONT, boxWidth:10, padding:10 } } }, scales:{ x:{stacked:true,grid:{display:false},ticks:{color:C.muted,font:FONT}}, y:{stacked:true,grid:GRID,ticks:{color:C.muted,font:FONT}} } }
+});
+
+// Landing pages
+const landingPages = [
+  ['/products/insulation-systems', 42100, '64.8%'],
+  ['/solutions/fire-protection', 31800, '61.2%'],
+  ['/resources/spec-sheets', 28950, '70.4%'],
+  ['/products/acoustic-solutions', 24300, '58.9%'],
+  ['/blog/sustainable-building-2024', 19600, '55.1%'],
+  ['/request-a-quote', 14200, '72.6%'],
+];
+document.getElementById('landingTableBody').innerHTML = landingPages.map(([p,s,e])=>`
+  <tr><td style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">${p}</td><td>${s.toLocaleString()}</td><td>${e}</td></tr>`).join('');
+
+/* ───────── ENGAGEMENT ───────── */
+const topPages = [
+  ['/products/insulation-systems', 68400, '2m 48s', C.blue],
+  ['/resources/spec-sheets', 51200, '3m 22s', C.green],
+  ['/solutions/fire-protection', 47800, '2m 31s', C.amber],
+  ['/about/sustainability', 33100, '1m 58s', C.coral],
+  ['/case-studies/midwest-distribution-center', 28700, '4m 05s', '#9B6BD9'],
+  ['/contact', 21400, '1m 12s', C.muted],
+];
+document.getElementById('topPagesBody').innerHTML = topPages.map(([p,v,t,c])=>`
+  <tr>
+    <td style="font-family:'IBM Plex Mono',monospace;font-size:11.5px">${p}</td>
+    <td>${v.toLocaleString()}</td>
+    <td>${t}</td>
+    <td><span class="chan-dot" style="background:${c}"></span></td>
+  </tr>`).join('');
+
+new Chart(document.getElementById('deviceEngagement'), {
+  type:'bar',
+  data:{ labels:['Desktop','Mobile','Tablet'], datasets:[{ label:'Engagement Rate', data:[0.652,0.541,0.588], backgroundColor:[C.blue+'CC',C.amber+'CC',C.green+'CC'], borderRadius:4 }] },
+  options:{ ...baseOpts(), plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${(c.raw*100).toFixed(1)}%`}}}, scales:{ x:{grid:{display:false},ticks:{color:C.muted,font:FONT}}, y:{grid:GRID,max:0.8,ticks:{color:C.muted,font:FONT,callback:v=>`${Math.round(v*100)}%`}} } }
+});
+
+// Marketing asset engagement
+const assets = [
+  ['Insulation Systems Spec Sheet (PDF)', 'Spec Sheet', 4180, '3m 22s', 612],
+  ['Fire Protection Solutions Brochure', 'Brochure', 3260, '2m 41s', 418],
+  ['Midwest Distribution Center Case Study', 'Case Study', 2840, '4m 05s', 339],
+  ['Sustainable Building Materials Guide', 'Guide', 2410, '3m 50s', 287],
+  ['Acoustic Solutions Product Catalog', 'Catalog', 1980, '2m 18s', 198],
+];
+document.getElementById('assetTableBody').innerHTML = assets.map(([a,t,v,time,l])=>`
+  <tr>
+    <td>${a}</td>
+    <td><span class="card-tag" style="background:var(--blue-lt);color:var(--blue)">${t}</span></td>
+    <td>${v.toLocaleString()}</td>
+    <td>${time}</td>
+    <td style="color:var(--green);font-weight:600">${l.toLocaleString()}</td>
+  </tr>`).join('');
+
+/* ───────── CONVERSIONS ───────── */
+const convByChannel = {
+  'Organic Search': [1680, 720, 880, 590],
+  'Paid Search':    [1240, 640, 610, 410],
+  'LinkedIn':       [620, 380, 410, 340],
+  'Direct':         [410, 142, 230, 98],
+  'Referral':       [180, 60, 60, 40],
+  'Email':          [50, 20, 20, 12],
+};
+new Chart(document.getElementById('conversionsByChannel'), {
+  type:'bar',
+  data:{ labels:Object.keys(convByChannel), datasets:[
+    { label:'Spec Sheet DL', data:Object.values(convByChannel).map(v=>v[0]), backgroundColor:C.blue+'CC', borderRadius:2 },
+    { label:'Quote Request', data:Object.values(convByChannel).map(v=>v[1]), backgroundColor:C.green+'CC', borderRadius:2 },
+    { label:'Contact Form',  data:Object.values(convByChannel).map(v=>v[2]), backgroundColor:C.amber+'CC', borderRadius:2 },
+    { label:'Webinar Signup',data:Object.values(convByChannel).map(v=>v[3]), backgroundColor:C.coral+'CC', borderRadius:2 },
+  ]},
+  options:{ ...baseOpts(), plugins:{ legend:{ position:'bottom', labels:{ color:C.muted, font:FONT, boxWidth:10, padding:10 } } }, scales:{ x:{stacked:true,grid:{display:false},ticks:{color:C.muted,font:FONT}}, y:{stacked:true,grid:GRID,ticks:{color:C.muted,font:FONT}} } }
+});
+
+// Funnel — simple HTML bars
+const funnelStages = [
+  { label:'Sessions', value:284610, color:C.blue },
+  { label:'Engaged Sessions', value:171800, color:C.green },
+  { label:'Marketing Asset View', value:48200, color:C.amber },
+  { label:'Lead Submitted (Key Event)', value:9842, color:C.coral },
+];
+const maxVal = funnelStages[0].value;
+document.getElementById('funnelChart').innerHTML = funnelStages.map((s,i)=>{
+  const pct = (s.value/maxVal*100);
+  const convFromPrev = i===0 ? 100 : (s.value/funnelStages[i-1].value*100).toFixed(1);
+  return `
+  <div style="margin-bottom:14px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">
+      <span style="font-weight:600">${s.label}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;color:var(--muted)">${s.value.toLocaleString()} ${i>0?`· ${convFromPrev}% of prev`:''}</span>
+    </div>
+    <div style="height:14px;background:#EEF1F5;border-radius:7px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:${s.color};border-radius:7px;"></div>
+    </div>
+  </div>`;
+}).join('');
+
+// Conversions trend
+const convTrend = {
+  'Spec Sheet Downloads': [260,275,290,310,330,350,365,355,380,400,415,430],
+  'Quote Requests':       [110,118,128,138,148,160,172,168,182,196,206,218],
+  'Contact Form Submits': [148,152,160,168,178,188,196,192,202,212,218,228],
+  'Webinar Signups':      [75,80,90,102,112,124,136,132,148,162,172,184],
+};
+new Chart(document.getElementById('conversionsTrend'), {
+  type:'line',
+  data:{ labels:MONTHS, datasets:Object.entries(convTrend).map(([name,data],i)=>({
+    label:name, data, borderColor:[C.blue,C.green,C.amber,C.coral][i], backgroundColor:'transparent', tension:.35, pointRadius:2
+  })) },
+  options: baseOpts({ plugins:{ legend:{ position:'bottom', labels:{ color:C.muted, font:FONT, boxWidth:10, padding:10 } } } })
+});
+
+/* ───────── AUDIENCE ───────── */
+new Chart(document.getElementById('regionChart'), {
+  type:'bar',
+  data:{ labels:['Midwest','Northeast','South','West','International'], datasets:[{ data:[31,24,21,12,12], backgroundColor:[C.blue,C.green,C.amber,C.coral,'#9B6BD9'].map(c=>c+'CC'), borderRadius:4 }] },
+  options:{ ...baseOpts(), plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}% of sessions`}}}, scales:{ x:{grid:{display:false},ticks:{color:C.muted,font:FONT}}, y:{grid:GRID,max:40,ticks:{color:C.muted,font:FONT,callback:v=>`${v}%`}} } }
+});
+
+new Chart(document.getElementById('deviceDonut'), {
+  type:'doughnut',
+  data:{ labels:['Desktop','Mobile','Tablet'], datasets:[{ data:[68,27,5], backgroundColor:[C.blue,C.amber,C.green], borderColor:'#fff', borderWidth:3, hoverOffset:6 }] },
+  options:{ cutout:'62%', plugins:{ legend:{ position:'bottom', labels:{ color:C.muted, font:FONT, boxWidth:10, padding:10 } }, tooltip:{ callbacks:{ label:c=>` ${c.label}: ${c.raw}%` } } }, animation:{duration:650}, responsive:true, maintainAspectRatio:true }
+});
+
+const industries = [
+  ['Construction & Contracting', 44, C.blue],
+  ['Architecture & Design', 22, C.green],
+  ['Real Estate Development', 16, C.amber],
+  ['Government & Public Sector', 10, C.coral],
+  ['Other / Unclassified', 8, '#9B6BD9'],
+];
+document.getElementById('industryTableBody').innerHTML = industries.map(([name,pct,color])=>`
+  <tr>
+    <td><span class="chan-dot" style="background:${color}"></span>${name}</td>
+    <td>${pct}%</td>
+    <td>
+      <div class="bar-wrap" style="max-width:240px">
+        <div class="bar-bg"><div class="bar-fill" style="width:${pct*2}%;background:${color}"></div></div>
+      </div>
+    </td>
+  </tr>`).join('');
+</script>
+</body>
+</html>
