@@ -817,6 +817,83 @@
     function changeVid(dir) { goVid(curVid + dir); }
   </script>
 
+  <!-- Marketing Materials Carousel — Collapsible -->
+  <div class="reveal" style="margin-top:12px;">
+    <button onclick="toggleMarketing()" id="marketing-toggle" style="
+      display:flex; align-items:center; gap:12px;
+      background:none; border:1px solid var(--rule);
+      padding:14px 24px; border-radius:2px; cursor:pointer;
+      font-family:'DM Mono',monospace; font-size:11px;
+      letter-spacing:1.2px; text-transform:uppercase;
+      color:var(--ink); transition:border-color 0.2s;
+      width:100%;">
+      <span id="marketing-arrow" style="color:var(--gold); font-size:14px;">▶</span>
+      Marketing Materials
+      <span style="margin-left:auto; color:var(--muted); font-size:10px;" id="marketing-toggle-hint">Click to expand</span>
+    </button>
+
+    <div id="marketing-panel" style="display:none; margin-top:1px; background:var(--white); border:1px solid var(--rule); border-radius:2px; overflow:hidden;">
+
+      <!-- Slides -->
+      <div style="display:flex; align-items:center; justify-content:center; padding:32px 24px; background:var(--cream);">
+        <div style="width:100%; max-width:420px;">
+          <div id="marketing-slide-0" class="ms-slide" style="display:block;">
+            <img src="Adoption.png" alt="Adopt Me — 12 Week Old Kittens flyer" style="width:100%; display:block; border-radius:2px; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+          </div>
+          <div id="marketing-slide-1" class="ms-slide" style="display:none;">
+            <img src="BottleFeeding.jpg" alt="Neonatal Care: Bottle Feeding flyer" style="width:100%; display:block; border-radius:2px; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+          </div>
+          <div id="marketing-slide-2" class="ms-slide" style="display:none;">
+            <img src="FIP.jpg" alt="Feline Infectious Peritonitis (FIP) flyer" style="width:100%; display:block; border-radius:2px; box-shadow:0 8px 24px rgba(0,0,0,0.08);">
+          </div>
+        </div>
+      </div>
+
+      <!-- Caption -->
+      <div style="padding:14px 24px; border-top:1px solid var(--rule); text-align:center;">
+        <p style="font-size:12px; color:var(--muted); line-height:1.6; margin:0;">
+          Designed marketing &amp; educational flyers for <strong style="color:var(--ink);">Lori's Kitty Rescue</strong> — covering kitten adoption promotion, neonatal bottle-feeding care guides, and FIP awareness/fundraising materials.
+        </p>
+      </div>
+
+      <!-- Controls -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-top:1px solid var(--rule);">
+        <button onclick="changeMs(-1)" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;background:none;border:1px solid var(--rule);color:var(--ink);padding:8px 20px;border-radius:2px;cursor:pointer;" onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--rule)'">← Prev</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="msdot" onclick="goMs(0)" style="width:8px;height:8px;border-radius:50%;background:var(--ink);cursor:pointer;display:inline-block;"></span>
+          <span class="msdot" onclick="goMs(1)" style="width:8px;height:8px;border-radius:50%;background:var(--rule);cursor:pointer;display:inline-block;"></span>
+          <span class="msdot" onclick="goMs(2)" style="width:8px;height:8px;border-radius:50%;background:var(--rule);cursor:pointer;display:inline-block;"></span>
+        </div>
+        <button onclick="changeMs(1)" style="font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;text-transform:uppercase;background:none;border:1px solid var(--rule);color:var(--ink);padding:8px 20px;border-radius:2px;cursor:pointer;" onmouseover="this.style.borderColor='var(--ink)'" onmouseout="this.style.borderColor='var(--rule)'">Next →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let msOpen = false;
+    let curMs = 0;
+    const msSlides = document.querySelectorAll('.ms-slide');
+    const msDots   = document.querySelectorAll('.msdot');
+
+    function toggleMarketing() {
+      msOpen = !msOpen;
+      document.getElementById('marketing-panel').style.display = msOpen ? 'block' : 'none';
+      document.getElementById('marketing-arrow').textContent   = msOpen ? '▼' : '▶';
+      document.getElementById('marketing-toggle-hint').textContent = msOpen ? 'Click to collapse' : 'Click to expand';
+    }
+
+    function goMs(n) {
+      msSlides[curMs].style.display = 'none';
+      msDots[curMs].style.background = 'var(--rule)';
+      curMs = (n + msSlides.length) % msSlides.length;
+      msSlides[curMs].style.display = 'block';
+      msDots[curMs].style.background = 'var(--ink)';
+    }
+
+    function changeMs(dir) { goMs(curMs + dir); }
+  </script>
+
 </section>
 
 <!-- ── About ── -->
